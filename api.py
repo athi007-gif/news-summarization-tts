@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from utils import scrape_news, analyze_sentiment, compare_sentiments, text_to_speech_hindi
+from fastapi.responses import FileResponse
 import os
 
 app = FastAPI()
@@ -17,4 +18,7 @@ def get_news(company: str):
 @app.get("/tts/")
 def generate_tts(text: str):
     audio_file = text_to_speech_hindi(text)
-    return {"audio_file": audio_file}
+    
+    if os.path.exists(audio_file):
+        return FileResponse(audio_file, media_type="audio/mpeg", filename="output.mp3")
+    return {"error": "TTS generation failed"}
