@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_URL = " http://127.0.0.1:8000"  # 🔄 REPLACE WITH YOUR ACTUAL API URL
+API_URL = "https://athihari-news-summarization-tts.hf.space"  # Change this
 
 st.title("📢 News Sentiment & Hindi Speech Generator")
 
@@ -10,7 +10,7 @@ company = st.text_input("Enter a company name:", "Reliance")
 if st.button("Fetch News"):
     with st.spinner("Fetching news..."):
         response = requests.get(f"{API_URL}/news/{company}")
-
+        
         if response.status_code == 200:
             data = response.json()
             articles = data["articles"]
@@ -28,10 +28,10 @@ if st.button("Fetch News"):
 
             if articles:
                 text_to_convert = " ".join([news["summary"] for news in articles[:3]])  # First 3 articles
-                tts_response = requests.get(f"{API_URL}/tts/", params={"text": text_to_convert})
+                tts_response = requests.get(f"{API_URL}/tts/?text={text_to_convert}")
 
                 if tts_response.status_code == 200:
-                    st.audio(tts_response.content, format="audio/mp3")
+                    st.audio("output.mp3")
                 else:
                     st.error("TTS generation failed.")
         else:
