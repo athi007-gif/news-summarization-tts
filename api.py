@@ -1,19 +1,30 @@
-from fastapi import FastAPI
-from utils import scrape_news, analyze_sentiment, compare_sentiments, text_to_speech_hindi
+from flask import Flask, jsonify
+from utils import fetch_news_summary, analyze_sentiment, generate_hindi_speech
 
-app = FastAPI()
+app = Flask(__name__)
 
-@app.get("/news/{company}")
-def get_news(company: str):
-    news_articles = scrape_news(company)
-    for news in news_articles:
-        news["sentiment"] = analyze_sentiment(news["summary"])
-    
-    sentiment_summary = compare_sentiments(news_articles)
-    
-    return {"articles": news_articles, "sentiment_summary": sentiment_summary}
+@app.route("/news/<company>", methods=["GET"])
+def get_news(company):
+    try:
+        summary = fetch_news_summary(company)
+        sentiment = analyze_sentiment(summary)
 
-@app.get("/tts/")
-def generate_tts(text: str):
-    audio_file = text_to_speech_hindi(text)
-    return {"audio_file": audio_file}
+        return jsonify({
+            "company": company,
+            "summary": summary,
+            "sentiment": sentiment
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/tts/<company>", methods=["GET"])
+def get_tts(company):
+    try:
+        audio_path = generate_hindi_speech(company)
+        with open(audio_path, "rb") as f:
+            return f.read(), 200, {'Content-Type': 'audio/wav'}
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
