@@ -1,8 +1,7 @@
 import streamlit as st
 import requests
 
-API_URL = "http://127.0.0.1:8000"  # Update if deploying
-
+API_URL = "https://your-deployed-api-url.com"  
 st.title("📢 News Sentiment & Hindi Speech Generator")
 
 company = st.text_input("Enter a company name:", "Reliance")
