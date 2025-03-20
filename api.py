@@ -1,16 +1,13 @@
-from fastapi import FastAPI
-import requests
+import gradio as gr
 
-app = FastAPI()
+def summarize_news(news_url):
+    return {"summary": "This is a test summary", "sentiment": "Positive"}
 
-@app.get("/news/{company}")
-def get_news(company: str):
-    try:
-        # Simulating API call (Replace with real logic)
-        news_summary = {"company": company, "summary": "Sample summarized news"}
-        
-        print("API Response:", news_summary)  # Debugging print
-        return news_summary
-    except Exception as e:
-        print("API Error:", str(e))
-        return {"error": "Failed to fetch news"}
+iface = gr.Interface(
+    fn=summarize_news,
+    inputs=gr.Textbox(label="News URL"),
+    outputs=gr.JSON()
+)
+
+if __name__ == "__main__":
+    iface.launch(server_name="0.0.0.0", server_port=7860)
