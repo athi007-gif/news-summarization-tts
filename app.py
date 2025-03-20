@@ -1,19 +1,17 @@
 import requests
 
-API_URL = "https://athihari-news-summarization-tts.hf.space"
+API_URL = "https://athihari-news-summarization-tts.hf.space/run"  # Change this based on actual API
 
 def fetch_news_summary(company):
     try:
-        response = requests.get(f"{API_URL}/news/{company}")
+        response = requests.post(API_URL, json={"news_url": f"https://news.com/{company}"})
         
-        # Debugging prints
         print("Status Code:", response.status_code)
-        print("Response Text:", response.text)  # Check actual response
+        print("Response Text:", response.text)  # Debugging print
         
         if response.status_code == 200:
             try:
-                data = response.json()  # Ensure it's valid JSON
-                print("Parsed JSON:", data)
+                data = response.json()
                 return data
             except requests.exceptions.JSONDecodeError:
                 print("Error: API did not return valid JSON.")
@@ -27,4 +25,4 @@ def fetch_news_summary(company):
 if __name__ == "__main__":
     company = "Reliance"
     result = fetch_news_summary(company)
-    print("Final Result:", result)  # Print result for debugging
+    print("Final Result:", result)
