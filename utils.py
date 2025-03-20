@@ -2,9 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 from textblob import TextBlob
 import re
-import os
 from gtts import gTTS
-from googletrans import Translator
+from translate import Translator  # Import the translate library
 
 def scrape_news(company_name):
     search_url = f"https://www.bing.com/news/search?q={company_name}&FORM=HDRSC6"
@@ -49,11 +48,13 @@ def compare_sentiments(news_list):
     return sentiment_counts
 
 def text_to_speech_hindi(text, filename="output.mp3"):
-    translator = Translator()
     try:
-        translated_text = translator.translate(text, src="en", dest="hi").text
+        translator = Translator(to_lang="hi")  # Initialize the translator
+        translated_text = translator.translate(text)  # Translate the text
+
         if translated_text == text:
             translated_text = "अनुवाद विफल रहा। कृपया पुनः प्रयास करें।"
+
         tts = gTTS(translated_text, lang="hi")
         tts.save(filename)
         return filename
