@@ -1,6 +1,6 @@
 import requests
 
-API_URL = "https://athihari-news-summarization-tts.hf.space/run"  # Change this based on actual API
+API_URL = "https://athihari-news-summarization-tts.hf.space"  # Corrected URL
 
 def fetch_news_summary(company):
     try:
