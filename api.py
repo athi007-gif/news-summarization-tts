@@ -1,13 +1,20 @@
-import gradio as gr
+from fastapi import FastAPI
+from pydantic import BaseModel
 
-def summarize_news(news_url):
-    return {"summary": "This is a test summary", "sentiment": "Positive"}
+# Initialize FastAPI app
+app = FastAPI()
 
-iface = gr.Interface(
-    fn=summarize_news,
-    inputs=gr.Textbox(label="News URL"),
-    outputs=gr.JSON()
-)
+# Define request model
+class NewsRequest(BaseModel):
+    news_url: str
 
-if __name__ == "__main__":
-    iface.launch(server_name="0.0.0.0", server_port=7860)
+# API endpoint for news summarization
+@app.post("/summarize")
+def summarize_news(request: NewsRequest):
+    return {
+        "summary": f"Summary for {request.news_url}",
+        "sentiment": "Positive"
+    }
+
+# Run the API locally with:
+# uvicorn api:app --host 0.0.0.0 --port 7860
