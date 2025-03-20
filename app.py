@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_URL = "http://127.0.0.1:8000"  # Update if deploying
+API_URL = "https://athihari-news-summarization-tts.hf.space"  
 
 st.title("📢 News Sentiment & Hindi Speech Generator")
 
