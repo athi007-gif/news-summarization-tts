@@ -1,20 +1,27 @@
-from fastapi import FastAPI
-from utils import scrape_news, analyze_sentiment, compare_sentiments, text_to_speech_hindi
-import os
+from fastapi import FastAPI, HTTPException
+from utils import scrape_news, analyze_sentiment, text_to_speech_hindi
 
 app = FastAPI()
 
-@app.get("/news/{company}")
-def get_news(company: str):
-    news_articles = scrape_news(company)
-    for news in news_articles:
-        news["sentiment"] = analyze_sentiment(news["summary"])
-    
-    sentiment_summary = compare_sentiments(news_articles)
-    
-    return {"articles": news_articles, "sentiment_summary": sentiment_summary}
+@app.get("/scrape/")
+def scrape(url: str):
+    headlines = scrape_news(url)
+    if not headlines:
+        return {"error": "No headlines found"}
+    return {"headlines": headlines}
 
-@app.get("/tts/")
-def generate_tts(text: str):
-    audio_file = text_to_speech_hindi(text)
-    return {"audio_file": audio_file}
+@app.post("/sentiment/")
+def sentiment(data: dict):
+    text = data.get("text")
+    if not text:
+        raise HTTPException(status_code=400, detail="No text provided")
+    return analyze_sentiment(text)
+
+@app.post("/tts/")
+def tts(data: dict):
+    text = data.get("text")
+    if not text:
+        raise HTTPException(status_code=400, detail="No text provided")
+    audio_path = text_to_speech_hindi(text)
+    with open(audio_path, "rb") as audio:
+        return audio.read()

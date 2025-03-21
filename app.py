@@ -1,38 +1,40 @@
 import streamlit as st
-from utils import scrape_news, analyze_sentiment, compare_sentiments, text_to_speech_hindi
-import uvicorn
+import requests
 
-st.title("📢 News Sentiment & Hindi Speech Generator")
+# Hugging Face API Endpoint
+API_URL = "https://huggingface.co/spaces/athihari/news-summarization-tts/api"
 
-company = st.text_input("Enter a company name:", "Reliance")
+st.title("📰 News Summarization & Hindi TTS")
 
-if st.button("Fetch News"):
-    with st.spinner("Fetching news..."):
-        articles = scrape_news(company)
-        for news in articles:
-            news["sentiment"] = analyze_sentiment(news["summary"])
-        sentiment_summary = compare_sentiments(articles)
+news_url = st.text_input("🔗 Enter News URL")
 
-        st.subheader("📰 News Articles & Sentiments")
-        for news in articles:
-            st.markdown(f"### [{news['title']}]({news['url']})")
-            st.write(f"**Summary:** {news['summary']}")
-            st.write(f"**Sentiment:** {news['sentiment']}")
-            st.write("---")
+if st.button("Fetch & Summarize"):
+    if news_url:
+        with st.spinner("⏳ Fetching news..."):
+            response = requests.get(f"{API_URL}/scrape/", params={"url": news_url})
+            if response.status_code == 200:
+                data = response.json()
+                if "error" in data or not data["headlines"]:
+                    st.error("⚠️ No headlines found. Try a different URL.")
+                else:
+                    st.subheader("📌 Top Headlines")
+                    for headline in data["headlines"]:
+                        st.write(f"- {headline}")
 
-        st.subheader("📊 Sentiment Analysis Summary")
-        st.write(sentiment_summary)
+                    # Sentiment Analysis
+                    with st.spinner("🔍 Performing Sentiment Analysis..."):
+                        sentiment_res = requests.post(f"{API_URL}/sentiment/", json={"text": data["headlines"]})
+                        sentiments = sentiment_res.json()
+                        st.write("📊 **Sentiment:**", sentiments)
 
-        if articles:
-            text_to_convert = " ".join([news["summary"] for news in articles[:3]])
-            audio_file = text_to_speech_hindi(text_to_convert, filename="static/output.mp3")
-
-            if audio_file == "static/output.mp3":
-                st.audio("static/output.mp3")
+                    # Generate Hindi TTS
+                    with st.spinner("🔊 Generating Hindi Speech..."):
+                        tts_res = requests.post(f"{API_URL}/tts/", json={"text": data["headlines"][0]})
+                        if tts_res.status_code == 200:
+                            st.audio(tts_res.content, format="audio/wav")
+                        else:
+                            st.error("⚠️ Error generating speech.")
             else:
-                st.error("TTS generation failed.")
-        else:
-            st.error("Failed to fetch news. Try again later.")
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+                st.error("❌ Failed to fetch news.")
+    else:
+        st.warning("⚠️ Please enter a valid news URL.")
