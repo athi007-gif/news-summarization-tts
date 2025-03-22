@@ -15,37 +15,43 @@ if st.button("Fetch & Summarize"):
             
             if response.status_code == 200:
                 try:
-                    data = response.json()
-                    
-                    if "error" in data:
-                        st.error("No news articles found.")
-                    else:
-                        articles = data.get("articles", [])
-                        sentiment_summary = data.get("sentiment_summary", "No sentiment summary available.")
-                        
-                        st.subheader("📰 News Articles & Sentiments")
-                        for news in articles:
-                            st.markdown(f"### [{news.get('title', 'No Title')}]({news.get('url', '#')})")
-                            st.write(f"**Summary:** {news.get('summary', 'No summary available.')}")
-                            st.write(f"**Sentiment:** {news.get('sentiment', 'Unknown')}")
-                            st.write("---")
-                        
-                        st.subheader("📊 Sentiment Analysis Summary")
-                        st.write(sentiment_summary)
-                        
-                        if articles:
-                            text_to_convert = " ".join([news.get("summary", "") for news in articles[:3]])  
-                            tts_response = requests.post(f"{API_URL}/tts/", json={"text": text_to_convert})
-                            
-                            if tts_response.status_code == 200:
-                                st.audio("output.mp3")
-                            else:
-                                st.error("TTS generation failed.")
+                    data = response.json()  # Ensure response is valid JSON
                 except requests.exceptions.JSONDecodeError:
-                    st.error("Error decoding JSON response. The API might not be returning valid JSON.")
-                    st.write("Response Content:", response.text)
+                    st.error("Received an invalid response from the server. Please try again later.")
+                    st.stop()
+
+                if "error" in data or "articles" not in data:
+                    st.error("No news articles found.")
+                else:
+                    articles = data["articles"]
+                    sentiment_summary = data["sentiment_summary"]
+
+                    st.subheader("📰 News Articles & Sentiments")
+                    for news in articles:
+                        st.markdown(f"### [{news['title']}]({news['url']})")
+                        st.write(f"**Summary:** {news['summary']}")
+                        st.write(f"**Sentiment:** {news['sentiment']}")
+                        st.write("---")
+
+                    st.subheader("📊 Sentiment Analysis Summary")
+                    st.write(sentiment_summary)
+
+                    if articles:
+                        text_to_convert = " ".join([news["summary"] for news in articles[:3]])  
+                        
+                        tts_response = requests.post(f"{API_URL}/tts/", json={"text": text_to_convert})
+
+                        if tts_response.status_code == 200:
+                            try:
+                                with open("output.mp3", "wb") as f:
+                                    f.write(tts_response.content)
+                                st.audio("output.mp3")
+                            except Exception as e:
+                                st.error(f"Error saving TTS output: {e}")
+                        else:
+                            st.error("TTS generation failed.")
             else:
-                st.error(f"Failed to fetch news. Status Code: {response.status_code}")
-                st.write("Response Content:", response.text)
+                st.error(f"Failed to fetch news. HTTP Status: {response.status_code}")
+
         except requests.exceptions.RequestException as e:
-            st.error(f"An error occurred while making the request: {e}")
+            st.error(f"Network error: {e}")
