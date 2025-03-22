@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
 
-API_URL = "https://huggingface.co/spaces/athihari/news-summarization-tts"
+# ✅ Update API URL
+API_URL = "https://athihari-news-summarization-tts.hf.space"
 
 st.title("📢 News Summarization & Hindi TTS")
 
@@ -13,26 +14,29 @@ if st.button("Fetch & Summarize"):
         
         if response.status_code == 200:
             data = response.json()
-            articles = data["articles"]
-            sentiment_summary = data["sentiment_summary"]
+            if "error" in data:
+                st.error("No news articles found.")
+            else:
+                articles = data["articles"]
+                sentiment_summary = data["sentiment_summary"]
 
-            st.subheader("📰 News Articles & Sentiments")
-            for news in articles:
-                st.markdown(f"### [{news['title']}]({news['url']})")
-                st.write(f"**Summary:** {news['summary']}")
-                st.write(f"**Sentiment:** {news['sentiment']}")
-                st.write("---")
+                st.subheader("📰 News Articles & Sentiments")
+                for news in articles:
+                    st.markdown(f"### [{news['title']}]({news['url']})")
+                    st.write(f"**Summary:** {news['summary']}")
+                    st.write(f"**Sentiment:** {news['sentiment']}")
+                    st.write("---")
 
-            st.subheader("📊 Sentiment Analysis Summary")
-            st.write(sentiment_summary)
+                st.subheader("📊 Sentiment Analysis Summary")
+                st.write(sentiment_summary)
 
-            if articles:
-                text_to_convert = " ".join([news["summary"] for news in articles[:3]])  
-                tts_response = requests.get(f"{API_URL}/tts/?text={text_to_convert}")
+                if articles:
+                    text_to_convert = " ".join([news["summary"] for news in articles[:3]])  
+                    tts_response = requests.post(f"{API_URL}/tts/", json={"text": text_to_convert})
 
-                if tts_response.status_code == 200:
-                    st.audio("output.mp3")
-                else:
-                    st.error("TTS generation failed.")
+                    if tts_response.status_code == 200:
+                        st.audio("output.mp3")
+                    else:
+                        st.error("TTS generation failed.")
         else:
             st.error("Failed to fetch news. Try again later.")

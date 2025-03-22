@@ -12,6 +12,7 @@ def scrape_news(company_name):
     
     response = requests.get(search_url, headers=headers)
     if response.status_code != 200:
+        print("❌ Bing request failed. Status code:", response.status_code)
         return []
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -27,15 +28,19 @@ def scrape_news(company_name):
 
     return news_data
 
-# Fetch Full Article Content (if needed)
+# Fetch Full Article Content
 def fetch_article_summary(url):
     try:
         response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        if response.status_code != 200:
+            return "Summary unavailable."
+
         soup = BeautifulSoup(response.text, "html.parser")
-        paragraphs = soup.find_all("p")
-        content = " ".join([p.text for p in paragraphs[:5]])  # Extract first 5 paragraphs
+        paragraphs = soup.find_all(["p", "div"])  # Extract from both <p> and <div>
+        content = " ".join([p.get_text() for p in paragraphs[:5]])  # First 5 paragraphs
         return re.sub(r"\s+", " ", content.strip())  
-    except:
+    except Exception as e:
+        print(f"❌ Error fetching article: {e}")
         return "Summary unavailable."
 
 # Sentiment Analysis
