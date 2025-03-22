@@ -2,53 +2,43 @@ import requests
 from bs4 import BeautifulSoup
 from textblob import TextBlob
 import re
-import random
 from gtts import gTTS
 from googletrans import Translator
 
-# Random User-Agents to Avoid Blocking
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36",
-]
-
-# ✅ News Scraping Function
+# News Scraping Function
 def scrape_news(company_name):
     search_url = f"https://www.bing.com/news/search?q={company_name}&FORM=HDRSC6"
-    headers = {"User-Agent": random.choice(USER_AGENTS)}
-
+    headers = {"User-Agent": "Mozilla/5.0"}
+    
     response = requests.get(search_url, headers=headers)
     if response.status_code != 200:
-        print(f"❌ Error: Bing returned status code {response.status_code}")
         return []
 
     soup = BeautifulSoup(response.text, "html.parser")
-    articles = soup.find_all("a", {"class": "title"}, limit=10)  # Check if this tag is still valid!
-
+    articles = soup.find_all("a", {"class": "title"}, limit=10)  # Extract 10 news articles
+    
     news_data = []
     for article in articles:
         title = article.text
         link = article["href"]
-        summary = fetch_article_summary(link)
+        summary = fetch_article_summary(link)  
+        
         news_data.append({"title": title, "summary": summary, "url": link})
 
     return news_data
 
-# ✅ Fetch Article Summary
+# Fetch Full Article Content (if needed)
 def fetch_article_summary(url):
     try:
-        headers = {"User-Agent": random.choice(USER_AGENTS)}
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
         soup = BeautifulSoup(response.text, "html.parser")
         paragraphs = soup.find_all("p")
-        content = " ".join([p.text for p in paragraphs[:5]])
-        return re.sub(r"\s+", " ", content.strip())
-    except requests.exceptions.RequestException as e:
-        print("❌ Error fetching article:", e)
+        content = " ".join([p.text for p in paragraphs[:5]])  # Extract first 5 paragraphs
+        return re.sub(r"\s+", " ", content.strip())  
+    except:
         return "Summary unavailable."
 
-# ✅ Sentiment Analysis
+# Sentiment Analysis
 def analyze_sentiment(text):
     analysis = TextBlob(text)
     polarity = analysis.sentiment.polarity
@@ -59,11 +49,28 @@ def analyze_sentiment(text):
     else:
         return "Neutral"
 
-# ✅ Comparative Sentiment Analysis
+# Comparative Sentiment Analysis
 def compare_sentiments(news_list):
     sentiment_counts = {"Positive": 0, "Negative": 0, "Neutral": 0}
     for news in news_list:
         sentiment_counts[news["sentiment"]] += 1
     return sentiment_counts
 
-#
+# Convert Text to Hindi Speech
+def text_to_speech_hindi(text, filename="output.mp3"):
+    translator = Translator()
+    
+    try:
+        translated_text = translator.translate(text, src="en", dest="hi").text
+        print("✅ Translated Hindi Text:", translated_text)  # Debugging output
+
+        if translated_text == text:  # If translation fails
+            translated_text = "अनुवाद विफल रहा। कृपया पुनः प्रयास करें।"
+
+        tts = gTTS(translated_text, lang="hi")  # Use the translated Hindi text
+        tts.save(filename)
+        return filename
+
+    except Exception as e:
+        print("❌ Translation Error:", e)
+        return "Translation failed."
